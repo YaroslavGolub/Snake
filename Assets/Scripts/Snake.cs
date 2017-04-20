@@ -1,16 +1,14 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class Snake : MonoBehaviour
 {
-
     public int gridWidth = 10;
     public int gridHeight = 10;
+
     private int[,] _grid;
 
-    private int _initialLenth = 5;
+    private int _initialSnakeLength = 3;
 
     private int _snakeLength;
     private int _snakeX = 0;
@@ -32,7 +30,7 @@ public class Snake : MonoBehaviour
 
     private void Start()
     {
-        _snakeLength = _initialLenth;
+        _snakeLength = _initialSnakeLength;
         _moveRate = 1 / _movesPerSecond;
         _grid = new int[gridWidth, gridHeight];
 
@@ -104,22 +102,22 @@ public class Snake : MonoBehaviour
             // if snakeX>=_grid.width snakeX=0 == if(snakeY>=gridHeight) snakeY = 0
             //CheckNextMove
 
-            if (_snakeX >= gridWidth)
+            if (_snakeX >= _grid.GetLength(0))
             {
                 _snakeX = 0;
             }
             else if (_snakeX < 0)
             {
-                _snakeX = gridWidth - 1;
+                _snakeX = _grid.GetLength(0) - 1;
             }
 
-            if (_snakeY >= gridHeight)
+            if (_snakeY >= _grid.GetLength(1))
             {
                 _snakeY = 0;
             }
             else if (_snakeY < 0)
             {
-                _snakeY = gridHeight - 1;
+                _snakeY = _grid.GetLength(1) - 1;
             }
 
 
