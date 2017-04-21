@@ -3,57 +3,57 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FoodManager : MonoBehaviour, IFoodManager
+namespace SnakeGame
 {
-    [SerializeField]
-    private GameObject _foodPrefab;
-    [SerializeField]
-    private Color[] _foodColors;
-    [SerializeField]
-    private int _startAmn;
-    private List<GameObject> _foodList = new List<GameObject>();
-
-    private void Start()
+    public class FoodManager : MonoBehaviour, IFoodManager
     {
-        for (int i = 0; i < _startAmn; i++)
-        {
-            AddNewObject();
-        }
-    }
+        [SerializeField]
+        private GameObject _foodPrefab;
+        [SerializeField]
+        private Color[] _foodColors;
+        [SerializeField]
+        private int _startAmn;
+        private List<GameObject> _foodList = new List<GameObject>();
 
-    private GameObject GetPooledFood()
-    {
-        for (int i = 0; i < _foodList.Count; i++)
+        private void Start()
         {
-            if (!_foodList[i].activeSelf)
+            for (int i = 0; i < _startAmn; i++)
             {
-                return _foodList[i];
+                AddNewObject();
             }
         }
 
-        return AddNewObject();
-    }
+        private GameObject GetPooledFood()
+        {
+            for (int i = 0; i < _foodList.Count; i++)
+            {
+                if (!_foodList[i].activeSelf)
+                {
+                    return _foodList[i];
+                }
+            }
 
-    private GameObject AddNewObject()
-    {
-        var go = Instantiate(_foodPrefab) as GameObject;
-        go.SetActive(false);
-        _foodList.Add(go);
-        return go;
-    }
+            return AddNewObject();
+        }
 
-    public int SpawnFood(int x, int y)
-    {
-        var foodType = UnityEngine.Random.Range((int)Food.Common, (int)Food.SpeedUpMotion - 1);
-        var go = GetPooledFood();
+        private GameObject AddNewObject()
+        {
+            var go = Instantiate(_foodPrefab) as GameObject;
+            go.SetActive(false);
+            _foodList.Add(go);
+            return go;
+        }
 
-        go.GetComponent<Renderer>().material.color = _foodColors[-(foodType + 1)];
-        go.transform.position = new Vector3(x, y, 0.0f);
-        go.SetActive(true);
-        return foodType;
-    }
+        public int SpawnFood(int x, int y)
+        {
+            var foodType = UnityEngine.Random.Range((int)Food.Common, (int)Food.SpeedUpMotion - 1);
+            var go = GetPooledFood();
+
+            go.GetComponent<Renderer>().material.color = _foodColors[-(foodType + 1)];
+            go.transform.position = new Vector3(x, y, 0.0f);
+            go.SetActive(true);
+            return foodType;
+        }
+    } 
 }
-interface IFoodManager
-{
-    int SpawnFood(int x, int y);
-}
+

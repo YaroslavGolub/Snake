@@ -1,47 +1,47 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class ObjectPooler : MonoBehaviour, IPooler
+namespace SnakeGame
 {
-    [SerializeField]
-    private GameObject _prefab;
-    [SerializeField]
-    private int _startAmn;
-
-    private List<GameObject> _objList = new List<GameObject>();
-
-    private void Start()
+    public class ObjectPooler : MonoBehaviour, IPooler
     {
-        for (int i = 0; i < _startAmn; i++)
-        {
-            AddNewObject();
-        }
-    }
+        [SerializeField]
+        private GameObject _prefab;
+        [SerializeField]
+        private int _startAmn;
 
-    public GameObject GetPooledObject()
-    {
-        for (int i = 0; i < _objList.Count; i++)
+        private List<GameObject> _objList = new List<GameObject>();
+
+        private void Start()
         {
-            if (!_objList[i].activeSelf)
+            for (int i = 0; i < _startAmn; i++)
             {
-                return _objList[i];
+                AddNewObject();
             }
         }
 
-        return AddNewObject();
+        public GameObject GetPooledObject()
+        {
+            for (int i = 0; i < _objList.Count; i++)
+            {
+                if (!_objList[i].activeSelf)
+                {
+                    return _objList[i];
+                }
+            }
+
+            return AddNewObject();
+        }
+
+        private GameObject AddNewObject()
+        {
+            var go = Instantiate(_prefab) as GameObject;
+            go.transform.SetParent(this.transform);
+            go.SetActive(false);
+            _objList.Add(go);
+            return go;
+        }
     }
 
-    private GameObject AddNewObject()
-    {
-        var go = Instantiate(_prefab) as GameObject;
-        go.transform.SetParent(this.transform);
-        go.SetActive(false);
-        _objList.Add(go);
-        return go;
-    }
-}
 
-interface IPooler
-{
-    GameObject GetPooledObject();
 }
