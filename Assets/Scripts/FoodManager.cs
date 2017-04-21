@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FoodManager : MonoBehaviour,IFoodManager
+public class FoodManager : MonoBehaviour, IFoodManager
 {
     [SerializeField]
     private GameObject _foodPrefab;
@@ -36,7 +36,7 @@ public class FoodManager : MonoBehaviour,IFoodManager
 
     private GameObject AddNewObject()
     {
-        GameObject go = Instantiate(_foodPrefab);
+        var go = Instantiate(_foodPrefab) as GameObject;
         go.SetActive(false);
         _foodList.Add(go);
         return go;
@@ -44,11 +44,10 @@ public class FoodManager : MonoBehaviour,IFoodManager
 
     public int SpawnFood(int x, int y)
     {
-        print("Spawning Food");
-        int foodType = UnityEngine.Random.Range((int)Food.Common, (int)Food.SpeedUpMotion - 1);
-        GameObject go = GetPooledFood();
+        var foodType = UnityEngine.Random.Range((int)Food.Common, (int)Food.SpeedUpMotion - 1);
+        var go = GetPooledFood();
 
-        go.GetComponent<Renderer>().material.color = _foodColors[-(foodType+1)];
+        go.GetComponent<Renderer>().material.color = _foodColors[-(foodType + 1)];
         go.transform.position = new Vector3(x, y, 0.0f);
         go.SetActive(true);
         return foodType;

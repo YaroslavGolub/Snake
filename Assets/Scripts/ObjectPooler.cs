@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class ObjectPooler : MonoBehaviour, IPooler
@@ -34,7 +33,8 @@ public class ObjectPooler : MonoBehaviour, IPooler
 
     private GameObject AddNewObject()
     {
-        GameObject go = Instantiate(_prefab);
+        var go = Instantiate(_prefab) as GameObject;
+        go.transform.SetParent(this.transform);
         go.SetActive(false);
         _objList.Add(go);
         return go;
