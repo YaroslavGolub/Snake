@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class Snake : MonoBehaviour
 {
@@ -8,42 +10,69 @@ public class Snake : MonoBehaviour
 
     private int[,] _grid;
 
+    [SerializeField]
     private int _initialSnakeLength = 3;
 
     private int _snakeLength;
-    private int _snakeX = 0;
-    private int _snakeY = 4;
+
+    [Header("Only whole numbers!")]
+    [SerializeField]
+    private Vector2 _snakeStartPosition;
+
+    private int _snakeX;
+    private int _snakeY;
 
     private Transform _snakeTransform;
     private float _lastMove;
-    private float _timeBetweenMoves = 0.35f;
+
     private Vector3 _direction;
 
     public GameObject foodPrefab;
     public Text scoreText;
 
     private bool lost;
+    private bool speedEffect;
+
     [SerializeField]
     [Range(0.5f, 10.0f)]
     private float _movesPerSecond;
     private float _moveRate;
 
+    [SerializeField]
+    private float _specialEffectDuration;
+
+    public GameObject objPooler;
+    private IPooler _objPooler;
+
+    public GameObject foodManager;
+    private IFoodManager _foodManager;
+
     private void Start()
     {
+        _objPooler = objPooler.GetComponent<IPooler>();
+        _foodManager = foodManager.GetComponent<IFoodManager>();
+
         _snakeLength = _initialSnakeLength;
+        transform.position = _snakeStartPosition;
+        _snakeX = (int)_snakeStartPosition.x;
+        _snakeY = (int)_snakeStartPosition.y;
+
         _moveRate = 1 / _movesPerSecond;
+
         _grid = new int[gridWidth, gridHeight];
 
         _snakeTransform = this.transform;
         _direction = Vector3.right;
         _grid[_snakeX, _snakeY] = _snakeLength;
-        scoreText.text = "Score: " + _snakeLength;
-        SpawnFood(8, 4, -1);
+
+        UpdateText();
+
+        SpawnFood();
+        SpawnFood();
     }
 
     private void Update()
     {
-
         if (lost)
             return;
 
@@ -51,20 +80,17 @@ public class Snake : MonoBehaviour
         {
             for (int i = 0; i < _grid.GetLength(0); i++)
             {
-                // X value
                 for (int j = 0; j < _grid.GetLength(1); j++)
                 {
-                    // Y value
                     if (_grid[i, j] > 0)
                     {
                         _grid[i, j]--;
                         if (_grid[i, j] == 0)
                         {
-                            //destroyed something
-                            GameObject goToDestroy = GameObject.Find(i.ToString() + j.ToString());
-                            if (goToDestroy != null)
+                            GameObject goToMove = GameObject.Find(i.ToString() + j.ToString());
+                            if (goToMove != null)
                             {
-                                Destroy(goToDestroy);
+                                goToMove.SetActive(false);
                             }
                         }
                     }
@@ -73,7 +99,8 @@ public class Snake : MonoBehaviour
 
             _lastMove = Time.time;
 
-            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject go = _objPooler.GetPooledObject();
+            go.SetActive(true);
             go.transform.position = new Vector3(_snakeX, _snakeY, 0);
             go.name = _snakeX.ToString() + _snakeY.ToString();
 
@@ -102,62 +129,54 @@ public class Snake : MonoBehaviour
             // if snakeX>=_grid.width snakeX=0 == if(snakeY>=gridHeight) snakeY = 0
             //CheckNextMove
 
-            if (_snakeX >= _grid.GetLength(0))
-            {
-                _snakeX = 0;
-            }
-            else if (_snakeX < 0)
-            {
-                _snakeX = _grid.GetLength(0) - 1;
-            }
+            VerifyNextMove();
 
-            if (_snakeY >= _grid.GetLength(1))
-            {
-                _snakeY = 0;
-            }
-            else if (_snakeY < 0)
-            {
-                _snakeY = _grid.GetLength(1) - 1;
-            }
-
-
-            if (_grid[_snakeX, _snakeY] == -1) // -1 incremental food; -2 decremental food; // -3 slowMo food // -4 
+            if (_grid[_snakeX, _snakeY] < 0) // -1 incremental food; -2 decremental food; // -3 slowMo food // -4 
             {
                 print("increment || dicrement size here");// if length <2 after decrement - GameOver or will get a bug;
-                _snakeLength++;
-                scoreText.text = "Score: " + _snakeLength;
-                print("SOME FOOD THERE");
-                GameObject goRoDestroy = GameObject.Find("increment food");
-                if (goRoDestroy != null)
+
+                int currentFood = _grid[_snakeX, _snakeY];
+                switch (currentFood)
                 {
-                    Destroy(goRoDestroy);
+                    case (int)Food.Common:
+                        IncreaseSnakeSize();
+                        break;
+                    case (int)Food.Decrement:
+                        DecreaseSnakeSize();
+                        break;
+                    case (int)Food.SlowMotion:
+                        MakeSlowMotion();
+                        break;
+                    case (int)Food.SpeedUpMotion:
+                        MakeSpeedUpMotion();
+                        break;
+                    default:
+                        break;
                 }
 
-                for (int i = 0; i < _grid.GetLength(0); i++)
-                {
-                    for (int j = 0; j < _grid.GetLength(1); j++)
-                    {
-                        if (_grid[i, j] > 0)
-                            _grid[i, j]++;
-                    }
-                }
+                UpdateText();
+                //GameObject goRoDestroy = GameObject.Find("increment food");
+                //if (goRoDestroy != null)
+                //{
+                //    Destroy(goRoDestroy);
+                //}
+
+                //for (int i = 0; i < _grid.GetLength(0); i++)
+                //{
+                //    for (int j = 0; j < _grid.GetLength(1); j++)
+                //    {
+                //        if (_grid[i, j] > 0)
+                //            _grid[i, j]++;
+                //    }
+                //}
 
                 // spawn Food  
-                bool foodSpawned = false;
-                while (!foodSpawned)
-                {
-                    int x = Random.Range(0, _grid.GetLength(0));
-                    int y = Random.Range(0, _grid.GetLength(1));
-                    if (_grid[x, y] == 0)
-                    {
-                        SpawnFood(x, y, -1);
-                        foodSpawned = true;
-                    }
-                }
+                SpawnFood();
             }
             else if (_grid[_snakeX, _snakeY] != 0) // Change on > 0
             {
                 Debug.LogError("PutGameOverConditionHere");
+                GameOver();
                 lost = true;
                 return;
             }
@@ -166,10 +185,42 @@ public class Snake : MonoBehaviour
             _snakeTransform.position = new Vector3(_snakeX, _snakeY);
             _grid[_snakeX, _snakeY] = _snakeLength;
 
-
         }
 
+        GetInput();
+    }
 
+    private void UpdateText()
+    {
+        scoreText.text = "Snake Length: " + _snakeLength;
+    }
+
+    /// <summary>
+    /// Teleports to anouther side if we facing to the gameBoard
+    /// </summary>
+    private void VerifyNextMove()
+    {
+        if (_snakeX >= _grid.GetLength(0))
+        {
+            _snakeX = 0;
+        }
+        else if (_snakeX < 0)
+        {
+            _snakeX = _grid.GetLength(0) - 1;
+        }
+
+        if (_snakeY >= _grid.GetLength(1))
+        {
+            _snakeY = 0;
+        }
+        else if (_snakeY < 0)
+        {
+            _snakeY = _grid.GetLength(1) - 1;
+        }
+    }
+
+    private void GetInput()
+    {
         if (Input.GetKeyDown(KeyCode.W))
         {
             _direction = Vector3.up;
@@ -188,12 +239,91 @@ public class Snake : MonoBehaviour
             _direction = Vector3.right;
         }
     }
-
-    private void SpawnFood(int x, int y, int foodVal)
+    private void SpawnFood()
     {
-        _grid[x, y] = foodVal;
-        GameObject go = Instantiate(foodPrefab) as GameObject;
-        go.transform.position = new Vector3(x, y, 0);
-        go.name = "increment food";
+        bool foodSpawned = false;
+        while (!foodSpawned)
+        {
+            int x = Random.Range(0, _grid.GetLength(0));
+            int y = Random.Range(0, _grid.GetLength(1));
+            if (_grid[x, y] == 0)
+            {
+                _grid[x, y] = _foodManager.SpawnFood(x, y);
+                foodSpawned = true;
+            }
+        }
     }
+    private void IncreaseSnakeSize()
+    {
+        _snakeLength++;
+        for (int i = 0; i < _grid.GetLength(0); i++)
+        {
+            for (int j = 0; j < _grid.GetLength(1); j++)
+            {
+                if (_grid[i, j] > 0)
+                    _grid[i, j]++;
+            }
+        }
+        print("increaseSize");
+    }
+
+    private void DecreaseSnakeSize()
+    {
+        print("decreaseSize");
+        _snakeLength--;
+        if (_snakeLength <= 2)
+            GameOver();
+    }
+
+    private void MakeSlowMotion()
+    {
+        print("slowWWW");
+        StartCoroutine(SpecialEffect());
+
+    }
+    private void MakeSpeedUpMotion()
+    {
+        print("speedUp");
+        StartCoroutine(SpecialEffect(true));
+    }
+
+    private void ReflectSnake()
+    {
+        print("reflecting snake");
+    }
+
+    private void GameOver()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+    private IEnumerator SpecialEffect(bool speedUp = false)
+    {
+        if (speedEffect)
+            yield break;
+
+        speedEffect = true;         // prevents double acceleration/deceleration
+        float temp = _moveRate;
+        _moveRate = (speedUp) ? _moveRate / 2.0f : _moveRate * 2.0f;
+        yield return new WaitForSeconds(_specialEffectDuration);
+        _moveRate = temp;
+        speedEffect = false;
+    }
+
+    public void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("food"))
+        {
+            print("fooooood");
+            other.gameObject.SetActive(false);
+        }
+    }
+}
+
+public enum Food
+{
+    Common = -1,
+    Decrement = -2,
+    SlowMotion = -3,
+    SpeedUpMotion = -4
+    // -1 incremental food; -2 decremental food; // -3 slowMo food // -4 
 }

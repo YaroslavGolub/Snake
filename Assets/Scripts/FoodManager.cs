@@ -1,0 +1,60 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class FoodManager : MonoBehaviour,IFoodManager
+{
+    [SerializeField]
+    private GameObject _foodPrefab;
+    [SerializeField]
+    private Color[] _foodColors;
+    [SerializeField]
+    private int _startAmn;
+    private List<GameObject> _foodList = new List<GameObject>();
+
+    private void Start()
+    {
+        for (int i = 0; i < _startAmn; i++)
+        {
+            AddNewObject();
+        }
+    }
+
+    private GameObject GetPooledFood()
+    {
+        for (int i = 0; i < _foodList.Count; i++)
+        {
+            if (!_foodList[i].activeSelf)
+            {
+                return _foodList[i];
+            }
+        }
+
+        return AddNewObject();
+    }
+
+    private GameObject AddNewObject()
+    {
+        GameObject go = Instantiate(_foodPrefab);
+        go.SetActive(false);
+        _foodList.Add(go);
+        return go;
+    }
+
+    public int SpawnFood(int x, int y)
+    {
+        print("Spawning Food");
+        int foodType = UnityEngine.Random.Range((int)Food.Common, (int)Food.SpeedUpMotion - 1);
+        GameObject go = GetPooledFood();
+
+        go.GetComponent<Renderer>().material.color = _foodColors[-(foodType+1)];
+        go.transform.position = new Vector3(x, y, 0.0f);
+        go.SetActive(true);
+        return foodType;
+    }
+}
+interface IFoodManager
+{
+    int SpawnFood(int x, int y);
+}
